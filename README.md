@@ -5,7 +5,7 @@ A simple shell script for Fedora optimization.
 ## Installation
 
 ```bash
-git clone https://github.com/somniasum/crimsonhat && \
+git clone "https://github.com/somniasum/crimsonhat" && \
 cd crimsonhat && \
 sudo ./crimsonhat.sh
 ```
