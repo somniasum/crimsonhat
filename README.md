@@ -1,5 +1,7 @@
 <div align="center">
-# CRIMS0NHAT
+ <h1 style="font-size: 4em; font-weight: 900; letter-spacing: 0.1em;">
+  <span style="color: #DC143C;">CRIMSON</span><span style="color: #8B0000;">HAT</span>
+</h1>
 </div>
 
 A simple shell script for Fedora optimization.
