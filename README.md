@@ -1,7 +1,5 @@
 <div align="center">
- <h1 style="font-size: 5em; font-weight: 900; letter-spacing: 0.1em;">
-  <span style="color: #DC143C;">CRIMS0N</span><span style="color: #8B0000;">H4T</span>
-</h1>
+  <img src="title.svg" alt="CRIMS0NH4T" width="600">
 </div>
 
 A simple shell script for Fedora optimization.
