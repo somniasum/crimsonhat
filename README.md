@@ -4,6 +4,8 @@
 
 A simple shell script for Fedora optimization.
 
+![](https://github.com/somniasum/crimsonhat/blob/main/illustration.gif)
+
 ## Installation
 
 Just copy & paste to your terminal, the rest is history.
