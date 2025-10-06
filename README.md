@@ -1,4 +1,6 @@
+<div align="center">
 # CRIMS0NHAT
+</div>
 
 A simple shell script for Fedora optimization.
 
