@@ -1,5 +1,4 @@
 # CRIMS0NHAT
-![cyberpunk](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHgxcXh6MTBrcHEzODE3dzljb2kxOGxvNTVnenM2ODA5ZXQ5NmFtNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JYZWs0UkzK2WKBoCUM/giphy.gif)
 
 A simple shell script for Fedora optimization.
 
