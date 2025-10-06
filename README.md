@@ -4,6 +4,8 @@ A simple shell script for Fedora optimization.
 
 ## Installation
 
+Just copy & paste to your terminal, the rest is history.
+
 ```bash
 git clone "https://github.com/somniasum/crimsonhat" && \
 cd crimsonhat && \
