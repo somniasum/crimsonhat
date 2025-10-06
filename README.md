@@ -1,8 +1,9 @@
 <div align="center">
   <img src="title.svg" alt="CRIMS0NH4T" width="600">
+      A simple shell script for Fedora optimization.
 </div>
 
-A simple shell script for Fedora optimization.
+
 
 ## Installation
 
