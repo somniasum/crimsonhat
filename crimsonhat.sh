@@ -10,6 +10,7 @@ PURPLE='\033[0;35m'
 NC='\033[0m'
 
 # Make sure system is up-to-date
+clear
 echo -e "${BLUE}[ - ]${NC} Updating system."
 sudo dnf update -y -q && \
 sudo dnf autoremove -y -q && \
