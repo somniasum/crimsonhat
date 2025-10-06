@@ -1,5 +1,5 @@
 # CRIMS0NHAT
-![](https://giphy.com/gifs/Edgerunners-anime-cyberpunk-edgerunners-JYZWs0UkzK2WKBoCUM)
+![cyberpunk](https://giphy.com/gifs/Edgerunners-anime-cyberpunk-edgerunners-JYZWs0UkzK2WKBoCUM)
 
 A simple shell script for Fedora optimization.
 
