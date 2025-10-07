@@ -109,7 +109,7 @@ performance_optimization(){
             sudo sysctl -p > /dev/null && \
             echo -e "${GREEN}[ + ]${NC} SSD performance optimized."
         fi
-    elif [ "disk_type" = "1" ]; then
+    elif [ "$disk_type" = "1" ]; then
         echo -e "${PURPLE}[ # ]${NC} HDD identified." && \
         echo -e "${BLUE} [ - ]${NC} Optimizing system performance for HDD."
         echo bfq | sudo tee /sys/block/sda/queue/scheduler > /dev/null && \
