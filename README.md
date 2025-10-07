@@ -13,7 +13,6 @@ git clone "https://github.com/somniasum/crimsonhat"
 cd crimsonhat
 ./crimsonhat.sh
 ```
-Pretty much after that you good to go. Enjoy your optimized system now.
 
 ## Features
 ![](https://github.com/somniasum/crimsonhat/blob/main/illustration.gif)
