@@ -194,7 +194,6 @@ install_multimedia_codecs() {
         "gstreamer1-plugins-base"
         "gstreamer1-plugins-good"
         "gstreamer1-plugin-openh264"
-        "gstreamer1-libav"
     )
 
     local missing=false
