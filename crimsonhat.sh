@@ -2,7 +2,7 @@
 # author: somniasum
 # description: Automated Fedora tweaks for post-installation
 
-set -euo pipefail
+set -u
 
 # Script configuration
 readonly SCRIPT_VERSION="2.0"
