@@ -16,7 +16,7 @@ cd crimsonhat
 Pretty much after that you good to go. Enjoy your optimized system now.
 
 ## Features
-![](https://github.com/somniasum/crimsonhat/blob/main/illustration.mp4)
+![](https://github.com/somniasum/crimsonhat/blob/main/illustration.gif)
  1. DNF configuration.
  2. Multimedia codecs for video support and other stuff, blah blah blah.
  3. Driver installation so you don't stress yourself out about driver support.
