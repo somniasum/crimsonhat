@@ -11,7 +11,7 @@ Just copy & paste to your terminal, the rest is history.
 ```bash
 git clone "https://github.com/somniasum/crimsonhat" && \
 cd crimsonhat && \
-sudo ./crimsonhat.sh
+./crimsonhat.sh
 ```
 Pretty much after that you good to go. Enjoy your optimized system now.
 
