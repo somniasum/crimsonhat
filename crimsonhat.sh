@@ -5,7 +5,7 @@
 set -u
 
 # Script configuration
-readonly SCRIPT_VERSION="2.0"
+readonly SCRIPT_VERSION="0.1"
 readonly LOG_FILE="/tmp/crimsonhat_$(date +%Y%m%d_%H%M%S).log"
 
 # Color definitions
