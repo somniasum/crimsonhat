@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # author: somniasum
 # description: Automated Fedora tweaks for post-installation
+# version: 0.1
 
 set -u
 
