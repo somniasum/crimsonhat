@@ -5,7 +5,6 @@
 set -u
 
 # Script configuration
-readonly SCRIPT_VERSION="0.1"
 readonly LOG_FILE="/tmp/crimsonhat_$(date +%Y%m%d_%H%M%S).log"
 
 # Color definitions
@@ -43,22 +42,6 @@ log_error() {
     local message="$*"
     echo -e "${LOG_LEVELS[ERROR]} $message" >&2
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $message" >> "$LOG_FILE"
-}
-
-# Spinner for long operations
-spinner() {
-    local pid=$1
-    local message=$2
-    local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    local i=0
-
-    echo -n "$message "
-    while kill -0 "$pid" 2>/dev/null; do
-        i=$(( (i+1) % 10 ))
-        printf "\r$message ${spin:$i:1}"
-        sleep 0.1
-    done
-    printf "\r$message ✓\n"
 }
 
 # Progress indicator for operations
@@ -353,7 +336,7 @@ optimize_performance() {
 
         if [[ -f "$scheduler_path" ]]; then
             local current_scheduler
-            current_scheduler=$(cat "$scheduler_path" 2>/dev/null | grep -o '\[.*\]' | tr -d '[]')
+            current_scheduler=$(cmd < "$scheduler_path" 2>/dev/null | grep -o '\[.*\]' | tr -d '[]')
 
             if [[ "$current_scheduler" == "bfq" ]]; then
                 log SUCCESS "HDD already optimized."
@@ -445,8 +428,8 @@ cleanup() {
     kernel_count=$(rpm -q kernel | wc -l)
 
     if [[ $kernel_count -gt 3 ]]; then
-        log INFO "Removing old kernels (keeping last 3)..."
-        sudo dnf remove -y $(dnf repoquery --installonly --latest-limit=-3 -q) >/dev/null 2>&1 || true
+        log INFO "Removing old kernels. Keeping latest 3."
+        sudo dnf remove -y "$(dnf repoquery --installonly --latest-limit=-3 -q)" >/dev/null 2>&1 || true
         log SUCCESS "Old kernels removed."
     fi
 }
