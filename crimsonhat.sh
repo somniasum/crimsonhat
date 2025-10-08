@@ -322,7 +322,7 @@ optimize_performance() {
             log INFO "Optimizing SSD."
 
             # Backup sysctl.conf
-            sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup.$(date +%s) 2>/dev/null || true
+            sudo cp /etc/sysctl.conf "/etc/sysctl.conf.backup.$(date +%s)" 2>/dev/null || true
 
             echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf >/dev/null
             sudo sysctl -p >/dev/null 2>&1
