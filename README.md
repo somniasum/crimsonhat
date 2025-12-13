@@ -16,9 +16,8 @@ cd crimsonhat
 
 ## Features
 ![](https://github.com/somniasum/crimsonhat/blob/main/illustration.gif)
- * DNF configuration
- * Multimedia codecs for video support and other stuff, blah blah blah
- * Driver installation so you don't stress yourself out about driver support
- * Hardrive optimization
- * GNOME goes bbrrrrrr
- * Overall makes Fedora more lightweight
+ 1. DNF configuration
+ 2. Multimedia codecs installation
+ 3. Driver installation
+ 4. Hardrive optimization
+ 5. Desktop Enviroment optimization
