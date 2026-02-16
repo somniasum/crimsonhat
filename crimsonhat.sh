@@ -97,7 +97,7 @@ update_system() {
   sudo dnf up -y && \ 
   log SUCCESS "System updated successfully." || log_error "System failed to update."
   sudo dnf autoremove -y && sudo dnf clean packages && \ 
-  log SUCCESS "System cleaned successfully." || log_error "System failed to clean." && return 1
+  log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
 }
 
 # DNF configuration
