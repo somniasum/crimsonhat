@@ -131,10 +131,10 @@ install_rpm_fusion() {
   local nonfree_url="https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
 
   if sudo dnf install -y "$free_url" "$nonfree_url"; then
-    echo
+    
     log SUCCESS "RPM Fusion installed."
   else
-    echo
+    
     log_error "Failed to install RPM Fusion."
     return 1
   fi
@@ -148,24 +148,20 @@ install_multimedia_codecs() {
     "gstreamer1-plugin-openh264"
   )
 
-  local missing=false
+
   local -a missing_packages=()
 
   for pkg in "${packages[@]}"; do
     if ! rpm -q "$pkg" >/dev/null 2>&1; then
-      missing=true
       missing_packages+=("$pkg")
+      log SUCCES "Packages installed successfully." 
+      log INFO "Installing multimedia codecs." 
+      log NOTICE "Packages to install: ${missing_packages[*]}"
+      else 
+      log_error "Packages failed to install" 
+      return 1
     fi
   done
-
-  if [[ "$missing" == false ]]; then
-    log SUCCESS "Multimedia codecs already installed."
-    return 0
-  fi
-
-  log INFO "Installing multimedia codecs."
-  log NOTICE "Packages to install: ${missing_packages[*]}"
-  echo
 
   if sudo dnf install -y \
     gstreamer1-plugins-{good,bad-free,base} \
@@ -173,10 +169,9 @@ install_multimedia_codecs() {
     gstreamer1-libav \
     --exclude=gstreamer1-plugins-bad-free-devel \
     --allowerasing; then
-    echo
+    
     log SUCCESS "Multimedia codecs installed."
   else
-    echo
     log_error "Failed to install multimedia codecs."
     return 1
   fi
@@ -184,19 +179,12 @@ install_multimedia_codecs() {
 
 # GPU drivers
 install_gpu_drivers() {
-  local gpu_info
-  gpu_info=$(lspci | grep -iE "vga|3d|display")
+  local gpu_info=$(lspci | grep -iE "vga|3d|display")
 
   if [[ -z "$gpu_info" ]]; then
-    log WARN "No GPU detected. Skipping driver installation."
-    return 0
+    log WARN "No GPU detected. Ensure GPU is connected."
+    return 1
   fi
-
-  log NOTICE "Detected GPU(s):"
-  echo "$gpu_info" | while read -r line; do
-    echo "  • $line"
-  done
-  echo
 
   # Intel GPU
   if echo "$gpu_info" | grep -qi intel; then
