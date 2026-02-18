@@ -115,6 +115,12 @@ configure_dnf() {
 
 # RPM Fusion repositories
 install_rpm_fusion() {
+echo -ne "${LOG_LEVELS[PROMPT]} Install third-party repos? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
+        read -r response
+
+       if [[ $response =~ ^[Yy]$ ]]; then
+          
+
   if rpm -q rpmfusion-free-release >/dev/null 2>&1 &&
     rpm -q rpmfusion-nonfree-release >/dev/null 2>&1; then
     log SUCCESS "RPM Fusion already installed."
@@ -137,6 +143,7 @@ install_rpm_fusion() {
     
     log_error "Failed to install RPM Fusion."
     return 1
+  fi
   fi
 }
 
