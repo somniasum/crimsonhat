@@ -107,7 +107,8 @@ configure_dnf() {
   # Add settings to dnf.conf
   log INFO "Optimizing DNF."
   for dnf_conf_variable in "max_parallel_downloads=10" "fastestmirror=True"; do
-    [[ ! $(grep "^${dnf_conf_variable%%=*}=" "$dnf_conf" 2>/dev/null) ]] && echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null && \ 
+    [[ ! $(grep "^${dnf_conf_variable%%=*}=" "$dnf_conf" 2>/dev/null) ]] && \ 
+    echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null && \ 
     log SUCCESS "DNF config optimized."
   done
 
@@ -115,36 +116,22 @@ configure_dnf() {
 
 # RPM Fusion repositories
 install_rpm_fusion() {
-echo -ne "${LOG_LEVELS[PROMPT]} Install third-party repos? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
-        read -r response
+  echo -ne "${LOG_LEVELS[PROMPT]} Install third-party repos? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
+  read -r response
 
-       if [[ $response =~ ^[Yy]$ ]]; then
-          
-
-  if rpm -q rpmfusion-free-release >/dev/null 2>&1 &&
-    rpm -q rpmfusion-nonfree-release >/dev/null 2>&1; then
-    log SUCCESS "RPM Fusion already installed."
-    return 0
-  fi
-
-  log INFO "Installing RPM Fusion."
-  echo
-
-  local fedora_version
-  fedora_version=$(rpm -E %fedora)
-
-  local free_url="https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
-  local nonfree_url="https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
-
-  if sudo dnf install -y "$free_url" "$nonfree_url"; then
-    
-    log SUCCESS "RPM Fusion installed."
+  if [[ $response =~ ^[Yy]$ ]]; then
+    for rpm_install in "rpmfusion-free-release" "rpmfusion-nonfree-release"; do
+      rpm -q "$rpm_install" 2>/dev/null && \ 
+      log SUCCESS "RPM Fusion already installed." || \ 
+      {
+        log NOTICE "Installing RPM Fusion."
+        sudo dnf install -y $rpm_install
+      }
+    done
   else
-    
-    log_error "Failed to install RPM Fusion."
-    return 1
+    log WARN "Third-party is needed."
   fi
-  fi
+
 }
 
 # Multimedia codecs
@@ -155,17 +142,16 @@ install_multimedia_codecs() {
     "gstreamer1-plugin-openh264"
   )
 
-
   local -a missing_packages=()
 
   for pkg in "${packages[@]}"; do
     if ! rpm -q "$pkg" >/dev/null 2>&1; then
       missing_packages+=("$pkg")
-      log SUCCES "Packages installed successfully." 
-      log INFO "Installing multimedia codecs." 
+      log SUCCES "Packages installed successfully."
+      log INFO "Installing multimedia codecs."
       log NOTICE "Packages to install: ${missing_packages[*]}"
-      else 
-      log_error "Packages failed to install" 
+    else
+      log_error "Packages failed to install"
       return 1
     fi
   done
@@ -176,7 +162,7 @@ install_multimedia_codecs() {
     gstreamer1-libav \
     --exclude=gstreamer1-plugins-bad-free-devel \
     --allowerasing; then
-    
+
     log SUCCESS "Multimedia codecs installed."
   else
     log_error "Failed to install multimedia codecs."
