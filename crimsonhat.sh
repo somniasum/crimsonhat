@@ -94,10 +94,10 @@ check_prerequisites() {
 # System update
 update_system() {
   log INFO "Updating system."
-  sudo dnf up -y && \ 
-  log SUCCESS "System updated successfully." || log_error "System failed to update."
-  sudo dnf autoremove -y && sudo dnf clean packages && \ 
-  log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
+  sudo dnf up -y &&
+    log SUCCESS "System updated successfully." || log_error "System failed to update."
+  sudo dnf autoremove -y && sudo dnf clean packages &&
+    log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
 }
 
 # DNF configuration
@@ -107,9 +107,9 @@ configure_dnf() {
   # Add settings to dnf.conf
   log INFO "Optimizing DNF."
   for dnf_conf_variable in "max_parallel_downloads=10" "fastestmirror=True"; do
-    [[ ! $(grep "^${dnf_conf_variable%%=*}=" "$dnf_conf" 2>/dev/null) ]] && \ 
-    echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null && \ 
-    log SUCCESS "DNF config optimized."
+    [[ ! $(grep "^${dnf_conf_variable%%=*}=" "$dnf_conf" 2>/dev/null) ]] &&
+      echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null &&
+      log SUCCESS "DNF config optimized."
   done
 
 }
@@ -121,12 +121,12 @@ install_rpm_fusion() {
 
   if [[ $response =~ ^[Yy]$ ]]; then
     for rpm_install in "rpmfusion-free-release" "rpmfusion-nonfree-release"; do
-      rpm -q "$rpm_install" 2>/dev/null && \ 
-      log SUCCESS "RPM Fusion already installed." || \ 
-      {
-        log NOTICE "Installing RPM Fusion."
-        sudo dnf install -y $rpm_install
-      }
+      rpm -q "$rpm_install" 2>/dev/null &&
+        log SUCCESS "RPM Fusion already installed." ||
+        {
+          log NOTICE "Installing RPM Fusion."
+          sudo dnf install -y $rpm_install
+        }
     done
   else
     log WARN "Third-party is needed."
@@ -252,59 +252,65 @@ optimize_performance() {
   local disk_type
   local primary_disk
 
-  # Get the first disk info
-  disk_type=$(lsblk -d -o name,rota | awk 'NR==2 {print $2}')
-  primary_disk=$(lsblk -d -o name,rota | awk 'NR==2 {print $1}')
+  echo -ne "${LOG_LEVELS[PROMPT]} Optimize hard drive performance? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
+  read -r response
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    # Get the first disk info
+    disk_type=$(lsblk -d -o name,rota | awk 'NR==2 {print $2}')
+    primary_disk=$(lsblk -d -o name,rota | awk 'NR==2 {print $1}')
 
-  if [[ -z "$disk_type" ]]; then
-    log WARN "Failed to detect disk type. Skipping disk optimization."
-    return 0
-  fi
-
-  # SSD optimization
-  if [[ "$disk_type" == "0" ]]; then
-    log NOTICE "SSD detected ($primary_disk)."
-
-    if grep -q "^vm.swappiness=10" /etc/sysctl.conf 2>/dev/null; then
-      log SUCCESS "SSD already optimized."
-    else
-      log INFO "Optimizing SSD."
-
-      # Backup sysctl.conf
-      sudo cp /etc/sysctl.conf "/etc/sysctl.conf.backup.$(date +%s)" 2>/dev/null || true
-
-      echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf >/dev/null
-      sudo sysctl -p >/dev/null 2>&1
-      log SUCCESS "SSD optimized."
+    if [[ -z "$disk_type" ]]; then
+      log WARN "Failed to detect disk type. Skipping disk optimization."
+      return 0
     fi
 
-  # HDD optimization
-  elif [[ "$disk_type" == "1" ]]; then
-    log NOTICE "HDD detected ($primary_disk)."
+    # SSD optimization
+    if [[ "$disk_type" == "0" ]]; then
+      log NOTICE "SSD detected ($primary_disk)."
 
-    local scheduler_path="/sys/block/${primary_disk}/queue/scheduler"
-
-    if [[ -f "$scheduler_path" ]]; then
-      local current_scheduler
-      current_scheduler=$(cmd <"$scheduler_path" 2>/dev/null | grep -o '\[.*\]' | tr -d '[]')
-
-      if [[ "$current_scheduler" == "bfq" ]]; then
-        log SUCCESS "HDD already optimized."
+      if grep -q "^vm.swappiness=10" /etc/sysctl.conf 2>/dev/null; then
+        log SUCCESS "SSD already optimized."
       else
-        log INFO "Optimizing HDD."
-        if echo "bfq" | sudo tee "$scheduler_path" >/dev/null 2>&1; then
-          log SUCCESS "HDD optimized."
-        else
-          log WARN "Failed to optimize HDD."
-        fi
+        log INFO "Optimizing SSD."
+
+        # Backup sysctl.conf
+        sudo cp /etc/sysctl.conf "/etc/sysctl.conf.backup.$(date +%s)" 2>/dev/null || true
+
+        echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf >/dev/null
+        sudo sysctl -p >/dev/null 2>&1
+        log SUCCESS "SSD optimized."
       fi
-    else
-      log WARN "Scheduler configuration not available for $primary_disk."
+
+    # HDD optimization
+    elif [[ "$disk_type" == "1" ]]; then
+      log NOTICE "HDD detected ($primary_disk)."
+
+      local scheduler_path="/sys/block/${primary_disk}/queue/scheduler"
+
+      if [[ -f "$scheduler_path" ]]; then
+        local current_scheduler
+        current_scheduler=$(cmd <"$scheduler_path" 2>/dev/null | grep -o '\[.*\]' | tr -d '[]')
+
+        if [[ "$current_scheduler" == "bfq" ]]; then
+          log SUCCESS "HDD already optimized."
+        else
+          log INFO "Optimizing HDD."
+          if echo "bfq" | sudo tee "$scheduler_path" >/dev/null 2>&1; then
+            log SUCCESS "HDD optimized."
+          else
+            log WARN "Failed to optimize HDD."
+          fi
+        fi
+      else
+        log WARN "Scheduler configuration not available for $primary_disk."
+      fi
     fi
+  else
+    log NOTICE "Skipping hard drive optimization."
   fi
 }
 
-# GNOME optimization
+# GNOME Desktop Environment optimization
 optimize_gnome() {
   if ! pgrep -x "gnome-shell" >/dev/null 2>&1; then
     log NOTICE "GNOME not detected. Skipping desktop optimization."
@@ -316,17 +322,12 @@ optimize_gnome() {
   echo -ne "${LOG_LEVELS[PROMPT]} Optimize GNOME? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
   read -r response
 
-  if [[ ! "$response" =~ ^[Nn]$ ]]; then
+  if [[ "$response" =~ ^[Yn]$ ]]; then
     log INFO "Optimizing GNOME."
-
     # Disable animations
-    if gsettings set org.gnome.desktop.interface enable-animations false 2>/dev/null; then
-      log SUCCESS "Animations disabled for better performance."
-    else
+    gsettings set org.gnome.desktop.interface enable-animations false 2>/dev/null &&
+      log SUCCESS "GNOME optimized." ||
       log WARN "Failed to disable animations."
-    fi
-
-    log SUCCESS "GNOME optimized."
   else
     log INFO "Skipping GNOME optimization."
   fi
@@ -370,15 +371,15 @@ show_summary() {
 main() {
   show_banner
 
-  check_prerequisites && \ 
-  update_system && \ 
-  configure_dnf && \ 
-  install_rpm_fusion && \ 
-  install_multimedia_codecs && \ 
-  install_gpu_drivers && \ 
-  optimize_performance && \ 
-  optimize_gnome && \ 
-  log SUCCESS "System Optimized." || log_error "System optimization error."
+  check_prerequisites &&
+    update_system &&
+    configure_dnf &&
+    install_rpm_fusion &&
+    install_multimedia_codecs &&
+    install_gpu_drivers &&
+    optimize_performance &&
+    optimize_gnome &&
+    log SUCCESS "System Optimized." || log_error "System optimization error."
   show_summary
 }
 
