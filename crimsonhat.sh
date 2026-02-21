@@ -74,12 +74,12 @@ EOF
 
 # Prompt function to handle user input
 prompt() {
-    local prompt_text="${1:-}"
-    local response
-    echo -ne "${LOG_LEVELS[PROMPT]} ${prompt_text} [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
-    read -r response
-    #exit code for yes or no
-    [[ "$response" =~ ^[Yy]$ || -z "$response" ]]
+  local prompt_text="${1:-}"
+  local response
+  echo -ne "${LOG_LEVELS[PROMPT]} ${prompt_text} [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
+  read -r response
+  #exit code for yes or no
+  [[ "$response" =~ ^[Yy]$ || -z "$response" ]]
 }
 
 # Check prerequisites
@@ -103,20 +103,20 @@ check_prerequisites() {
 
 # System update
 update_system() {
-    if prompt "Update system?"; then
-        log INFO "Updating system."
-        sudo dnf up -y && \
-        log SUCCESS "System updated successfully." || log_error "System failed to update."
-    else
-        log NOTICE "Skipping system update."
-    fi
-    if prompt "Clean system?"; then
-    sudo dnf autoremove -y && \
-    sudo dnf clean packages && \
-    log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
-    else
-        log NOTICE "Skipping system clean."
-    fi
+  if prompt "Update system?"; then
+    log INFO "Updating system."
+    sudo dnf up -y &&
+      log SUCCESS "System updated successfully." || log_error "System failed to update."
+  else
+    log NOTICE "Skipping system update."
+  fi
+  if prompt "Clean system?"; then
+    sudo dnf autoremove -y &&
+      sudo dnf clean packages &&
+      log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
+  else
+    log NOTICE "Skipping system clean."
+  fi
 }
 
 # DNF configuration
@@ -135,7 +135,7 @@ configure_dnf() {
 
 # RPM Fusion repositories
 install_rpm_fusion() {
-    if prompt "Install third-party repos?"; then
+  if prompt "Install third-party repos?"; then
     for rpm_install in "rpmfusion-free-release" "rpmfusion-nonfree-release"; do
       rpm -q "$rpm_install" 2>/dev/null &&
         log SUCCESS "RPM Fusion already installed." ||
@@ -152,111 +152,118 @@ install_rpm_fusion() {
 
 # Multimedia codecs
 install_multimedia_codecs() {
-  local -a packages=(
-    "gstreamer1-plugins-base"
-    "gstreamer1-plugins-good"
-    "gstreamer1-plugin-openh264"
-  )
+  if prompt "Install multimedia codecs?"; then
+    local -a packages=(
+      "gstreamer1-plugins-base"
+      "gstreamer1-plugins-good"
+      "gstreamer1-plugin-openh264"
+    )
 
-  local -a missing_packages=()
+    local -a missing_packages=()
 
-  for pkg in "${packages[@]}"; do
-    if ! rpm -q "$pkg" >/dev/null 2>&1; then
-      missing_packages+=("$pkg")
-      log SUCCES "Packages installed successfully."
-      log INFO "Installing multimedia codecs."
-      log NOTICE "Packages to install: ${missing_packages[*]}"
+    for pkg in "${packages[@]}"; do
+      if ! rpm -q "$pkg" >/dev/null 2>&1; then
+        missing_packages+=("$pkg")
+        log SUCCES "Packages installed successfully."
+        log INFO "Installing multimedia codecs."
+        log NOTICE "Packages to install: ${missing_packages[*]}"
+      else
+        log_error "Packages failed to install"
+        return 1
+      fi
+    done
+
+    if sudo dnf install -y \
+      gstreamer1-plugins-{good,bad-free,base} \
+      gstreamer1-plugin-openh264 \
+      gstreamer1-libav \
+      --exclude=gstreamer1-plugins-bad-free-devel \
+      --allowerasing; then
+
+      log SUCCESS "Multimedia codecs installed."
     else
-      log_error "Packages failed to install"
+      log_error "Failed to install multimedia codecs."
       return 1
     fi
-  done
-
-  if sudo dnf install -y \
-    gstreamer1-plugins-{good,bad-free,base} \
-    gstreamer1-plugin-openh264 \
-    gstreamer1-libav \
-    --exclude=gstreamer1-plugins-bad-free-devel \
-    --allowerasing; then
-
-    log SUCCESS "Multimedia codecs installed."
   else
-    log_error "Failed to install multimedia codecs."
-    return 1
+    log NOTICE "Skipping multimedia codecs."
   fi
 }
 
 # GPU drivers
 install_gpu_drivers() {
-  local gpu_info=$(lspci | grep -iE "vga|3d|display")
+  if prompt "Install GPU drivers?"; then
+    local gpu_info=$(lspci | grep -iE "vga|3d|display")
+    if [[ -z "$gpu_info" ]]; then
+      log WARN "No GPU detected. Ensure GPU is connected."
+      return 1
+    fi
 
-  if [[ -z "$gpu_info" ]]; then
-    log WARN "No GPU detected. Ensure GPU is connected."
-    return 1
-  fi
+    # Intel GPU
+    if echo "$gpu_info" | grep -qi intel; then
+      log NOTICE "Intel GPU detected."
 
-  # Intel GPU
-  if echo "$gpu_info" | grep -qi intel; then
-    log NOTICE "Intel GPU detected."
-
-    if rpm -q intel-media-driver >/dev/null 2>&1; then
-      log SUCCESS "Intel drivers already installed."
-    else
-      log INFO "Installing Intel drivers."
-      if run_with_progress "Installing Intel drivers." sudo dnf install -y intel-media-driver; then
-        log SUCCESS "Intel drivers installed."
+      if rpm -q intel-media-driver >/dev/null 2>&1; then
+        log SUCCESS "Intel drivers already installed."
       else
-        log WARN "Failed to install Intel drivers."
+        log INFO "Installing Intel drivers."
+        if run_with_progress "Installing Intel drivers." sudo dnf install -y intel-media-driver; then
+          log SUCCESS "Intel drivers installed."
+        else
+          log WARN "Failed to install Intel drivers."
+        fi
       fi
     fi
-  fi
 
-  # NVIDIA GPU
-  if echo "$gpu_info" | grep -qi nvidia; then
-    log NOTICE "NVIDIA GPU detected."
+    # NVIDIA GPU
+    if echo "$gpu_info" | grep -qi nvidia; then
+      log NOTICE "NVIDIA GPU detected."
 
-    if rpm -q akmod-nvidia >/dev/null 2>&1; then
-      log SUCCESS "NVIDIA drivers already installed."
-    else
-      log INFO "Installing NVIDIA drivers."
-      if sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda; then
-        log SUCCESS "NVIDIA drivers installed."
-        log WARN "Reboot required for NVIDIA drivers to take effect."
+      if rpm -q akmod-nvidia >/dev/null 2>&1; then
+        log SUCCESS "NVIDIA drivers already installed."
       else
-        log WARN "Failed to install NVIDIA drivers."
+        log INFO "Installing NVIDIA drivers."
+        if sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda; then
+          log SUCCESS "NVIDIA drivers installed."
+          log WARN "Reboot required for NVIDIA drivers to take effect."
+        else
+          log WARN "Failed to install NVIDIA drivers."
+        fi
       fi
     fi
-  fi
 
-  # AMD GPU
-  if echo "$gpu_info" | grep -qi "amd\|radeon"; then
-    log NOTICE "AMD GPU detected."
+    # AMD GPU
+    if echo "$gpu_info" | grep -qi "amd\|radeon"; then
+      log NOTICE "AMD GPU detected."
 
-    local -a amd_packages=(
-      "mesa-vulkan-drivers"
-      "mesa-vdpau-drivers"
-      "mesa-va-drivers"
-      "vulkan-tools"
-    )
+      local -a amd_packages=(
+        "mesa-vulkan-drivers"
+        "mesa-vdpau-drivers"
+        "mesa-va-drivers"
+        "vulkan-tools"
+      )
 
-    local missing=false
-    for pkg in "${amd_packages[@]}"; do
-      if ! rpm -q "$pkg" >/dev/null 2>&1; then
-        missing=true
-        break
-      fi
-    done
+      local missing=false
+      for pkg in "${amd_packages[@]}"; do
+        if ! rpm -q "$pkg" >/dev/null 2>&1; then
+          missing=true
+          break
+        fi
+      done
 
-    if [[ "$missing" == false ]]; then
-      log SUCCESS "AMD drivers already installed."
-    else
-      log INFO "Installing AMD drivers."
-      if run_with_progress "Installing AMD Mesa drivers." sudo dnf install -y "${amd_packages[@]}"; then
-        log SUCCESS "AMD drivers installed."
+      if [[ "$missing" == false ]]; then
+        log SUCCESS "AMD drivers already installed."
       else
-        log WARN "Failed to install AMD drivers."
+        log INFO "Installing AMD drivers."
+        if run_with_progress "Installing AMD Mesa drivers." sudo dnf install -y "${amd_packages[@]}"; then
+          log SUCCESS "AMD drivers installed."
+        else
+          log WARN "Failed to install AMD drivers."
+        fi
       fi
     fi
+  else
+    log NOTICE "Skipping GPU optimization."
   fi
 }
 
@@ -265,7 +272,7 @@ optimize_performance() {
   local disk_type
   local primary_disk
 
-  if prompt "Optimize hard drive performance?" ; then
+  if prompt "Optimize hard drive performance?"; then
     # Get the first disk info
     disk_type=$(lsblk -d -o name,rota | awk 'NR==2 {print $2}')
     primary_disk=$(lsblk -d -o name,rota | awk 'NR==2 {print $1}')
@@ -379,16 +386,16 @@ show_summary() {
 main() {
   show_banner
 
-  check_prerequisites && \
-  update_system && \
-  configure_dnf && \
-  install_rpm_fusion && \
-  install_multimedia_codecs && \
-  install_gpu_drivers && \
-  optimize_performance && \
-  optimize_gnome && \
-  log SUCCESS "System Optimized." && \
-  show_summary|| log_error "System optimization error."
+  check_prerequisites &&
+    update_system &&
+    configure_dnf &&
+    install_rpm_fusion &&
+    install_multimedia_codecs &&
+    install_gpu_drivers &&
+    optimize_performance &&
+    optimize_gnome &&
+    log SUCCESS "System Optimized." &&
+    show_summary || log_error "System optimization error."
 }
 
 # Trap errors
