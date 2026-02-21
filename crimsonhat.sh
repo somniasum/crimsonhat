@@ -72,6 +72,16 @@ EOF
   echo
 }
 
+# Prompt function to handle user input
+prompt() {
+    local prompt_text="${1:-}"
+    local response
+    echo -ne "${LOG_LEVELS[PROMPT]} ${prompt_text} [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
+    read -r response
+    #exit code for yes or no
+    [[ "$response" =~ ^[Yy]$ || -z "$response" ]]
+}
+
 # Check prerequisites
 check_prerequisites() {
   if [[ $EUID -eq 0 ]]; then
@@ -93,11 +103,20 @@ check_prerequisites() {
 
 # System update
 update_system() {
-  log INFO "Updating system."
-  sudo dnf up -y &&
-    log SUCCESS "System updated successfully." || log_error "System failed to update."
-  sudo dnf autoremove -y && sudo dnf clean packages &&
+    if prompt "Update system?"; then
+        log INFO "Updating system."
+        sudo dnf up -y && \
+        log SUCCESS "System updated successfully." || log_error "System failed to update."
+    else
+        log NOTICE "Skipping system update."
+    fi
+    if prompt "Clean system?"; then
+    sudo dnf autoremove -y && \
+    sudo dnf clean packages && \
     log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
+    else
+        log NOTICE "Skipping system clean."
+    fi
 }
 
 # DNF configuration
@@ -116,10 +135,7 @@ configure_dnf() {
 
 # RPM Fusion repositories
 install_rpm_fusion() {
-  echo -ne "${LOG_LEVELS[PROMPT]} Install third-party repos? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
-  read -r response
-
-  if [[ $response =~ ^[Yy]$ ]]; then
+    if prompt "Install third-party repos?"; then
     for rpm_install in "rpmfusion-free-release" "rpmfusion-nonfree-release"; do
       rpm -q "$rpm_install" 2>/dev/null &&
         log SUCCESS "RPM Fusion already installed." ||
@@ -203,13 +219,10 @@ install_gpu_drivers() {
       log SUCCESS "NVIDIA drivers already installed."
     else
       log INFO "Installing NVIDIA drivers."
-      echo
       if sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda; then
-        echo
         log SUCCESS "NVIDIA drivers installed."
         log WARN "Reboot required for NVIDIA drivers to take effect."
       else
-        echo
         log WARN "Failed to install NVIDIA drivers."
       fi
     fi
@@ -252,9 +265,7 @@ optimize_performance() {
   local disk_type
   local primary_disk
 
-  echo -ne "${LOG_LEVELS[PROMPT]} Optimize hard drive performance? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
-  read -r response
-  if [[ "$response" =~ ^[Yy]$ ]]; then
+  if prompt "Optimize hard drive performance?" ; then
     # Get the first disk info
     disk_type=$(lsblk -d -o name,rota | awk 'NR==2 {print $2}')
     primary_disk=$(lsblk -d -o name,rota | awk 'NR==2 {print $1}')
@@ -319,10 +330,7 @@ optimize_gnome() {
 
   log NOTICE "GNOME desktop environment detected."
 
-  echo -ne "${LOG_LEVELS[PROMPT]} Optimize GNOME? [${COLORS[GREEN]}Y${COLORS[NC]}/${COLORS[RED]}n${COLORS[NC]}]: "
-  read -r response
-
-  if [[ "$response" =~ ^[Yn]$ ]]; then
+  if prompt "Optimize GNOME?"; then
     log INFO "Optimizing GNOME."
     # Disable animations
     gsettings set org.gnome.desktop.interface enable-animations false 2>/dev/null &&
@@ -340,7 +348,7 @@ show_summary() {
   echo -e "${COLORS[CYAN]}║                SUMM4RY                 ║${COLORS[NC]}"
   echo -e "${COLORS[CYAN]}╚════════════════════════════════════════╝${COLORS[NC]}"
   echo
-  log SUCCESS "System optimization successfull."
+  log SUCCESS "System optimization successfully."
   echo
   log NOTICE "Changes made:"
   echo "  • System packages updated"
@@ -352,8 +360,8 @@ show_summary() {
   echo "  • Desktop environment optimized"
   echo
   log NOTICE "System Information:"
-  echo "  • Fedora $(rpm -E %fedora)"
-  echo "  • Kernel $(uname -r)"
+  echo "  • OS: Fedora $(rpm -E %fedora)"
+  echo "  • Kernel: linux $(uname -r)"
   echo "  • Desktop: ${XDG_CURRENT_DESKTOP:-Unknown}"
   echo
   log INFO "Log file saved: $LOG_FILE"
@@ -371,16 +379,16 @@ show_summary() {
 main() {
   show_banner
 
-  check_prerequisites &&
-    update_system &&
-    configure_dnf &&
-    install_rpm_fusion &&
-    install_multimedia_codecs &&
-    install_gpu_drivers &&
-    optimize_performance &&
-    optimize_gnome &&
-    log SUCCESS "System Optimized." || log_error "System optimization error."
-  show_summary
+  check_prerequisites && \
+  update_system && \
+  configure_dnf && \
+  install_rpm_fusion && \
+  install_multimedia_codecs && \
+  install_gpu_drivers && \
+  optimize_performance && \
+  optimize_gnome && \
+  log SUCCESS "System Optimized." && \
+  show_summary|| log_error "System optimization error."
 }
 
 # Trap errors
