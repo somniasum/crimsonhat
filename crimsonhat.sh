@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: somniasum
 # description: script to optimize Fedora
-# version: 0.2
+# version: 0.6
 
 set -u
 
@@ -64,7 +64,7 @@ show_banner() {
   cat <<'EOF'
 ╔════════════════════════════════════════╗
 ║              CRIMS0NH4T                ║
-║                 v.0.2                  ║
+║                 v.0.6                  ║
 ╚════════════════════════════════════════╝
 EOF
   echo -e "${COLORS[NC]}"
@@ -121,16 +121,31 @@ update_system() {
 
 # DNF configuration
 configure_dnf() {
-  local dnf_conf="/etc/dnf/dnf.conf"
+  if prompt "Configure DNF?"; then
 
-  # Add settings to dnf.conf
-  log INFO "Optimizing DNF."
-  for dnf_conf_variable in "max_parallel_downloads=10" "fastestmirror=True"; do
-    [[ ! $(grep "^${dnf_conf_variable%%=*}=" "$dnf_conf" 2>/dev/null) ]] &&
-      echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null &&
-      log SUCCESS "DNF config optimized."
-  done
+    local dnf_conf="/etc/dnf/dnf.conf"
+    local settings=("max_parallel_downloads=10" "fastestmirror=True")
 
+    log INFO "Optimizing DNF."
+
+    # Check dnf file configuration
+    for dnf_conf_variable in "${settings[@]}"; do
+      if ! grep -q "^${dnf_conf_variable%%=*}" "$dnf_conf" 2>/dev/null; then
+        echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null &&
+          log SUCCESS "Added ${dnf_conf_variable} to DNF config." ||
+          {
+            log_error "DNF configuration error."
+            return 1
+          }
+      else
+        log NOTICE "DNF already configured."
+        break
+      fi
+    done
+
+  else
+    log NOTICE "Skipping DNF configuration."
+  fi
 }
 
 # RPM Fusion repositories
