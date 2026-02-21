@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="title.svg" alt="CRIMS0NH4T" width="600">
+  <img src="media/title.svg" alt="CRIMS0NH4T" width="600">
 </div>
 
 A simple shell script for Fedora optimization.
