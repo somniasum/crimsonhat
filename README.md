@@ -15,7 +15,7 @@ cd crimsonhat && \
 ```
 
 ## Features
-![](https://github.com/somniasum/crimsonhat/blob/main/illustration.gif)
+![](https://github.com/somniasum/crimsonhat/blob/main/media/illustration.gif)
  1. DNF configuration
  2. Multimedia codecs installation
  3. Driver installation
