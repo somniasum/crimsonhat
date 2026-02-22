@@ -111,9 +111,9 @@ update_system() {
     log NOTICE "Skipping system update."
   fi
   if prompt "Clean system?"; then
-    sudo dnf autoremove -y &&
-      sudo dnf clean packages &&
-      log SUCCESS "System cleaned successfully." || log_error "System clean failed." && return 1
+    sudo dnf autoremove -y && \
+    log SUCCESS "System cleaned successfully." || \
+    { log_error "System clean failed." && return 1; }
   else
     log NOTICE "Skipping system clean."
   fi
