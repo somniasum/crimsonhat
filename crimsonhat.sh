@@ -24,7 +24,7 @@ declare -A COLORS=(
 declare -A LOG_LEVELS=(
   [INFO]="${COLORS[BLUE]}[ - ]${COLORS[NC]}"
   [SUCCESS]="${COLORS[GREEN]}[ + ]${COLORS[NC]}"
-  [NOTICE]="${COLORS[PURPLE]}[ # ]${COLORS[NC]}"
+  [NOTICE]="${COLORS[CYAN]}[ # ]${COLORS[NC]}"
   [ERROR]="${COLORS[RED]}[ ! ]${COLORS[NC]}"
   [WARN]="${COLORS[YELLOW]}[ * ]${COLORS[NC]}"
   [PROMPT]="${COLORS[PURPLE]}[ ? ]${COLORS[NC]}"
@@ -111,9 +111,12 @@ update_system() {
     log NOTICE "Skipping system update."
   fi
   if prompt "Clean system?"; then
-    sudo dnf autoremove -y && \
-    log SUCCESS "System cleaned successfully." || \
-    { log_error "System clean failed." && return 1; }
+    sudo dnf autoremove -y &&
+      log SUCCESS "System cleaned successfully." ||
+      {
+        log_error "System clean failed."
+        return 1
+      }
   else
     log NOTICE "Skipping system clean."
   fi
@@ -121,16 +124,18 @@ update_system() {
 
 # DNF configuration
 configure_dnf() {
-  if prompt "Configure DNF?"; then
+  if prompt "Configure DNF package manager?"; then
 
     local dnf_conf="/etc/dnf/dnf.conf"
     local settings=("max_parallel_downloads=10" "fastestmirror=True")
 
-    log INFO "Optimizing DNF."
-
     # Check dnf file configuration
     for dnf_conf_variable in "${settings[@]}"; do
+
       if ! grep -q "^${dnf_conf_variable%%=*}" "$dnf_conf" 2>/dev/null; then
+
+        log INFO "Optimizing DNF."
+
         echo "$dnf_conf_variable" | sudo tee -a "$dnf_conf" >/dev/null &&
           log SUCCESS "Added ${dnf_conf_variable} to DNF config." ||
           {
@@ -141,6 +146,7 @@ configure_dnf() {
         log NOTICE "DNF already configured."
         break
       fi
+
     done
 
   else
@@ -150,17 +156,29 @@ configure_dnf() {
 
 # RPM Fusion repositories
 install_rpm_fusion() {
+
   if prompt "Install third-party repos?"; then
-    for rpm_install in "rpmfusion-free-release" "rpmfusion-nonfree-release"; do
-      rpm -q "$rpm_install" 2>/dev/null &&
-        log SUCCESS "RPM Fusion already installed." ||
-        {
-          log NOTICE "Installing RPM Fusion."
-          sudo dnf install -y $rpm_install
-        }
+
+    local repos=(
+      "rpmfusion-free-release"
+      "rpmfusion-nonfree-release"
+    )
+
+    for rpm_install in "${repos[@]}"; do
+      if ! rpm -q "$rpm_install" 2>/dev/null; then
+        log INFO "Installing RPM Fusion."
+        sudo dnf install -y $rpm_install 2>/dev/null ||
+          {
+            log NOTICE "RPM installation failed."
+          }
+      else
+        log SUCCESS "RPM Fusion already installed."
+        break
+      fi
     done
+
   else
-    log WARN "Third-party is needed."
+    log NOTICE "Skipping RPM Fusion third-party repos installation."
   fi
 
 }
@@ -168,37 +186,36 @@ install_rpm_fusion() {
 # Multimedia codecs
 install_multimedia_codecs() {
   if prompt "Install multimedia codecs?"; then
-    local -a packages=(
+    local packages=(
       "gstreamer1-plugins-base"
       "gstreamer1-plugins-good"
       "gstreamer1-plugin-openh264"
     )
 
-    local -a missing_packages=()
+    local missing=false
+
+    local multimedia_codecs=(
+      "gstreamer1-plugins-{good,bad-free,base}"
+      "gstreamer1-plugin-openh264"
+      "gstreamer1-libav"
+    )
 
     for pkg in "${packages[@]}"; do
       if ! rpm -q "$pkg" >/dev/null 2>&1; then
-        missing_packages+=("$pkg")
-        log SUCCES "Packages installed successfully."
-        log INFO "Installing multimedia codecs."
-        log NOTICE "Packages to install: ${missing_packages[*]}"
-      else
-        log_error "Packages failed to install"
-        return 1
+        missing=true
+        break
       fi
     done
 
-    if sudo dnf install -y \
-      gstreamer1-plugins-{good,bad-free,base} \
-      gstreamer1-plugin-openh264 \
-      gstreamer1-libav \
-      --exclude=gstreamer1-plugins-bad-free-devel \
-      --allowerasing; then
-
-      log SUCCESS "Multimedia codecs installed."
+    if [[ "$missing" == false ]]; then
+      log SUCCESS "Multimedia codecs already installed."
     else
-      log_error "Failed to install multimedia codecs."
-      return 1
+      log INFO "Installing multimedia codecs."
+      if run_with_progress "Multimedia codecs: " sudo dnf install -y "${multimedia_codecs[@]}" --exclude=gstreamer1-plugins-bad-free-devel --allowerasing; then
+        log SUCCESS "Multimedia codecs installed."
+      else
+        log WARN "Failed to install Multimedia codecs."
+      fi
     fi
   else
     log NOTICE "Skipping multimedia codecs."
@@ -208,7 +225,10 @@ install_multimedia_codecs() {
 # GPU drivers
 install_gpu_drivers() {
   if prompt "Install GPU drivers?"; then
+
     local gpu_info=$(lspci | grep -iE "vga|3d|display")
+
+    #GPU checker
     if [[ -z "$gpu_info" ]]; then
       log WARN "No GPU detected. Ensure GPU is connected."
       return 1
@@ -350,7 +370,7 @@ optimize_gnome() {
     return 0
   fi
 
-  log NOTICE "GNOME desktop environment detected."
+  log PROMPT "GNOME desktop environment detected."
 
   if prompt "Optimize GNOME?"; then
     log INFO "Optimizing GNOME."
